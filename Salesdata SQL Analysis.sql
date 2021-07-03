@@ -2,21 +2,21 @@ sp_tables
 
 --Total Number of Products in each Category
 Select CategoryName,
-Count(ProductID) as TotalProducts
+COUNT(ProductID) as TotalProducts
 From Products
 inner join
 Categories
 on Categories.Categoryid=Products.Categoryid
 Group By CategoryName
-Order By Count(ProductID) Desc
+Order By COUNT(ProductID) Desc
 
 --Total Customers per country/city
 Select Country,
 City,
-Count(CustomerID) as TotalCustomer
+COUNT(CustomerID) as TotalCustomer
 From Customers
 Group by Country,City
-Order by Count(CustomerID) Desc
+Order by COUNT(CustomerID) Desc
 
 --Products that need to be reordered (UnitsInStock < ReorderLevel)
 Select ProductID,
@@ -137,7 +137,7 @@ ShippedDate
 From Orders
 Where ShippedDate>RequiredDate
 
---Salespeople with most late orders
+--Salespeople with Most Late Orders
 Select Orders.EmployeeID, 
 LastName,
 COUNT(Orders.EmployeeID) as TotalLateOrders
@@ -149,8 +149,134 @@ Where ShippedDate>RequiredDate
 Group By Orders.EmployeeID, LastName
 Order By TotalLateOrders Desc
 
+--Late Orders vs Total Orders
+with LateOrders as (
+Select Employees.EmployeeID, 
+LastName,
+ISNULL(COUNT(Orders.EmployeeID),0) as TotalLateOrders
+From Orders
+RIGHT JOIN
+Employees
+on Orders.EmployeeID=Employees.EmployeeID
+Where ShippedDate>RequiredDate
+Group By Employees.EmployeeID, LastName),
 
-sp_tables
+TotalOrders as (
+Select EmployeeID, 
+COUNT(OrderID) as AllOrders
+From ORDERS
+Group By EmployeeID)
+
+Select TotalOrders.EmployeeID, 
+LastName,
+AllOrders,
+TotalLateOrders,
+CAST(1.0*TotalLateOrders/AllOrders AS Decimal(10,2)) as PercentLateOrders
+From LateOrders
+LEFT JOIN
+TotalOrders
+on TotalOrders.EmployeeID=LateOrders.EmployeeID
+
+--Customer Grouping Low, Medium and High Value Customers
+--- Low: 0-7500, Medium: 7501-15000, High: >=15,001
+;with CustOrderAmounts as (
+Select Customers.CustomerID,
+Customers.CompanyName,
+SUM(Quantity*UnitPrice) as TotalOrderAmount
+From Customers
+INNER JOIN
+Orders
+on Orders.CustomerID=Customers.CustomerID
+INNER JOIN
+OrderDetails
+on Orders.OrderID=OrderDetails.OrderID
+Group By Customers.CustomerID,
+Customers.CompanyName),
+
+CustGroups as (
+Select CustomerID,
+CompanyName,
+TotalOrderAmount,
+Case 
+When TotalOrderAmount between 0 and 7500 Then 'Low'
+When TotalOrderAmount between 7501 and 15000 Then 'Medium'
+When TotalOrderAmount>15000 Then 'High'
+End as CustomerGroup
+From CustOrderAmounts)
+
+--Percentage of Customers in Each Group
+;with CustOrderAmounts as (
+Select Customers.CustomerID,
+Customers.CompanyName,
+SUM(Quantity*UnitPrice) as TotalOrderAmount
+From Customers
+INNER JOIN
+Orders
+on Orders.CustomerID=Customers.CustomerID
+INNER JOIN
+OrderDetails
+on Orders.OrderID=OrderDetails.OrderID
+Group By Customers.CustomerID,
+Customers.CompanyName),
+
+CustGroups as (
+Select CustomerID,
+CompanyName,
+TotalOrderAmount,
+Case 
+When TotalOrderAmount between 0 and 7500 Then 'Low'
+When TotalOrderAmount between 7501 and 15000 Then 'Medium'
+When TotalOrderAmount>15000 Then 'High'
+End as CustomerGroup
+From CustOrderAmounts)
+
+Select CustomerGroup,
+COUNT(CustomerGroup) as TotalInGroup,
+1.0*COUNT(CustomerGroup)/(Select COUNT(*) From CustGroups) as PercentageInGroup
+From CustGroups
+Group By CustomerGroup
+Order by TotalInGroup desc
+
+--Suppliers and Customers by Country
+;with CountSupplier as (
+Select Country,
+COUNT(Country) as TotalSuppliers
+From Suppliers
+Group By Country),
+
+CountCustomer as (
+Select Country,
+COUNT(Country) as TotalCustomers
+from Customers
+Group By Country)
+
+Select ISNULL(CountCustomer.Country,CountSupplier.Country) as Country,
+ISNULL(TotalSuppliers,0) as TotalSuppliers,
+ISNULL(TotalCustomers,0) as TotalCustomers
+From
+CountSupplier
+FULL JOIN
+CountCustomer
+on CountSupplier.Country=CountCustomer.Country
+
+--Customers Who Can Minimise Freight Costs
+;with NextOrderDate as (
+Select CustomerID,
+CONVERT(date,OrderDate) as OrderDate,
+CONVERT(date, LEAD(OrderDate,1) 
+OVER (Partition By CustomerID Order By CustomerID, OrderDate)) as NextOrderDate
+From Orders)
+
+Select CustomerID,
+OrderDate,
+NextOrderDate,
+DATEDIFF(dd,OrderDate, NextOrderDate) as DaysBetweenOrders
+From NextOrderDate
+Where
+DATEDIFF(dd,Orderdate, NextOrderDate) <=5
+
+
+
 
 
 
