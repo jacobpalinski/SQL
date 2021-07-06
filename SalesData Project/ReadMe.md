@@ -1,4 +1,4 @@
-# Salesdata SQL Project
+# Sales Data SQL Project
 Analysis of a Sales database containing tables with information about Products, Customers, Employees, Orders, Shippers and Suppliers. 
 Executed a number of statements which utilised:
 - Aggregate Functions
