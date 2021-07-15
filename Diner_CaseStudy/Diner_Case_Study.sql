@@ -126,4 +126,50 @@ menu
 on sales.product_id=menu.product_id
 GROUP BY members.customer_id
 
--- In the first week after a customer joins the program
+-- In the first week after a customer joins the program (including their join date) they are earn 2x
+-- points on all items, not just sushi- how many points do customer A and B have at the end of January?
+SELECT members.customer_id,
+SUM(CASE WHEN DATEDIFF(d,join_date,order_date)<=7 then price*20
+ELSE price*10 END) as points
+FROM members
+JOIN
+sales
+on members.customer_id=sales.customer_id
+JOIN
+menu
+on sales.product_id=menu.product_id
+WHERE MONTH(order_date)=1
+GROUP BY members.customer_id
+
+-- Join All The Things
+CREATE VIEW [join_all] as SELECT 
+sales.customer_id,
+order_date,
+product_name,
+price,
+CASE WHEN order_date>=join_date THEN 'Y' ELSE 'N' END as member
+FROM members
+JOIN
+sales
+on members.customer_id=sales.customer_id
+JOIN
+menu
+on sales.product_id=menu.product_id
+
+-- Rank All The Things
+SELECT 
+sales.customer_id,
+order_date,
+product_name,
+price,
+CASE WHEN order_date>=join_date THEN 'Y' ELSE 'N' END as member,
+CASE WHEN order_date>=join_date THEN RANK() OVER (PARTITION BY sales.customer_id ORDER BY order_date asc) END as ranking
+FROM members
+JOIN
+sales
+on members.customer_id=sales.customer_id
+JOIN
+menu
+on sales.product_id=menu.product_id
+
+select * from rank_all
