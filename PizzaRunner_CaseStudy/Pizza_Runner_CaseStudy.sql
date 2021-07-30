@@ -21,6 +21,10 @@ SET distance=0,
 duration=0
 WHERE distance is null OR duration='ll'
 
+--- Change datatype of pizza_name in pizzarunner table
+ALTER TABLE pizza_names
+ALTER COLUMN pizza_name varchar(100)
+
 --- How many Pizzas were ordered?
 SELECT COUNT(pizza_id) as pizzas_ordered
 FROM customer_orders
@@ -37,12 +41,37 @@ GROUP BY runner_id
 
 --- How many of each type of pizza was delivered?
 SELECT pizza_name,
-COUNT(CAST(customer_orders.pizza_id as VARCHAR(100))
+COUNT(customer_orders.pizza_id) as pizzas_delivered
 FROM pizza_names
 JOIN
 customer_orders
 on pizza_names.pizza_id=customer_orders.pizza_id
+JOIN
+runner_orders
+on customer_orders.order_id=runner_orders.order_id
+WHERE cancellation='None'
 GROUP BY pizza_name
+
+--- How many vegetarian and meatlovers were ordered by each customer?
+SELECT customer_id, pizza_name,
+COUNT(customer_orders.pizza_id) as pizzas_ordered
+FROM pizza_names
+JOIN
+customer_orders
+on pizza_names.pizza_id=customer_orders.pizza_id
+GROUP BY customer_id,pizza_name
+ORDER BY customer_id ASC
+
+---What was the maximum number of pizzas delivered in a single order?
+SELECT TOP 1 
+COUNT(pizza_id) as pizzas_delivered
+from customer_orders
+JOIN
+runner_orders
+on customer_orders.order_id=runner_orders.order_id
+WHERE cancellation='None'
+GROUP BY customer_orders.order_id
+ORDER BY pizzas_delivered desc
 
 
 
