@@ -73,6 +73,30 @@ WHERE cancellation='None'
 GROUP BY customer_orders.order_id
 ORDER BY pizzas_delivered desc
 
+--- For each customer, how many delivered pizzas had at least 1 change and how many had no changes?
+SELECT customer_id,
+changes = SUM(CASE WHEN (exclusions!='None' or extras!='None') THEN 1 ELSE 0 END),
+no_changes = SUM(CASE WHEN (exclusions='None' and extras='None') THEN 1 ELSE 0 END)
+FROM customer_orders
+JOIN
+runner_orders
+on customer_orders.order_id=runner_orders.order_id
+WHERE cancellation='None'
+GROUP BY customer_id
+
+--- How many pizzas were delivered that had exclusions and extras?
+SELECT SUM(CASE WHEN (exclusions!='None' and extras!='None') THEN 1 ELSE 0 END)
+FROM customer_orders
+JOIN
+runner_orders
+on customer_orders.order_id=runner_orders.order_id
+WHERE cancellation='None'
+
+--- What was the total volume of pizzas ordered for each hour of the day?
+
+
+
+
 
 
 
