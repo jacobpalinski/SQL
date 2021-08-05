@@ -93,6 +93,53 @@ on customer_orders.order_id=runner_orders.order_id
 WHERE cancellation='None'
 
 --- What was the total volume of pizzas ordered for each hour of the day?
+SELECT DATEPART(HOUR,order_time) AS time_hour,
+COUNT(pizza_id) as pizzas_ordered
+FROM customer_orders 
+GROUP BY DATEPART(HOUR,order_time)
+
+--- What was the volume of orders for each day of the week?
+SELECT DATENAME(WEEKDAY,order_time) as day,
+COUNT(pizza_id) as pizzas_ordered
+FROM customer_orders
+GROUP BY DATENAME(WEEKDAY,order_time)
+
+--- How many runners signed up for each 1 week period?
+SELECT DATEPART(WEEK,registration_date) as week,
+COUNT(registration_date) as runners
+FROM runners
+GROUP BY DATEPART(WEEK,registration_date)
+
+--- What was the average time in minutes it took for each runner to arrive at the Pizza HQ to pickup the order?
+SELECT runner_id, 
+AVG(DATEDIFF(mi,order_time,pickup_time)) as average_pickup_time
+FROM runner_orders
+JOIN
+customer_orders
+on runner_orders.order_id=customer_orders.order_id
+WHERE pickup_time!='null'
+GROUP BY runner_id
+
+--- Is there any relationship between the number of pizzas and how long the order takes to prepare?
+;with cte as 
+(SELECT order_id,
+order_time,
+COUNT(pizza_id) as pizza_count
+FROM customer_orders
+GROUP BY order_id,order_time)
+
+SELECT cte.order_id, 
+cte.pizza_count,
+DATEDIFF(mi,order_time,pickup_time) as average_pickup_time
+FROM runner_orders
+JOIN
+cte
+on runner_orders.order_id=cte.order_id
+WHERE pickup_time!='null'
+
+--- What was the average distance travelled for each customer?
+
+
 
 
 
