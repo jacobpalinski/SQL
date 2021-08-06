@@ -138,7 +138,34 @@ on runner_orders.order_id=cte.order_id
 WHERE pickup_time!='null'
 
 --- What was the average distance travelled for each customer?
+SELECT customer_id,
+AVG(CAST(duration as DECIMAL(10,2))) as avg_distance
+FROM runner_orders
+JOIN
+customer_orders
+on runner_orders.order_id=customer_orders.order_id
+GROUP BY customer_id
 
+---What was the difference between the longest and shortest delivery times for all orders?
+;with cte as (SELECT customer_orders.order_id,
+DATEDIFF(mi,order_time,pickup_time) as pickup_time
+FROM runner_orders
+JOIN
+customer_orders
+on runner_orders.order_id=customer_orders.order_id
+WHERE pickup_time!='null')
+
+SELECT MAX(pickup_time)-MIN(pickup_time) as pickup_time
+FROM cte
+
+--- What was the average speed for each runner for each delivery and do you notice any trend for these values?
+SELECT customer_id,
+AVG(CAST((duration/distance) as DECIMAL(10,2))) as avg_distance
+FROM runner_orders
+JOIN
+customer_orders
+on runner_orders.order_id=customer_orders.order_id
+GROUP BY customer_id
 
 
 
