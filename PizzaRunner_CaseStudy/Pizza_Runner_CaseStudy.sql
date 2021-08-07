@@ -21,6 +21,12 @@ SET distance=0,
 duration=0
 WHERE distance is null OR duration='ll'
 
+ALTER TABLE runner_orders
+ALTER COLUMN distance float
+
+ALTER TABLE runner_orders
+ALTER COLUMN duration float
+
 --- Change datatype of pizza_name in pizzarunner table
 ALTER TABLE pizza_names
 ALTER COLUMN pizza_name varchar(100)
@@ -159,13 +165,95 @@ SELECT MAX(pickup_time)-MIN(pickup_time) as pickup_time
 FROM cte
 
 --- What was the average speed for each runner for each delivery and do you notice any trend for these values?
-SELECT customer_id,
-AVG(CAST((duration/distance) as DECIMAL(10,2))) as avg_distance
+SELECT runner_id,
+AVG(duration/distance) as avg_speed
 FROM runner_orders
 JOIN
 customer_orders
 on runner_orders.order_id=customer_orders.order_id
-GROUP BY customer_id
+WHERE pickup_time!='null'
+GROUP BY runner_id
+
+--- What was the successful delivery percentage for each runner?
+SELECT runner_id,
+100.0*SUM(CASE WHEN cancellation='None' THEN 1 ELSE 0 END)/COUNT(runner_id) as delivery_percentage
+FROM runner_orders
+GROUP BY runner_id
+
+--- If a Meat Lovers pizza costs $12 and Vegetarian costs $10 and there were no charges for changes - how much money has Pizza
+--- Runner made so far if there are no delivery fees?
+SELECT SUM(CASE WHEN pizza_id=1 THEN 12 ELSE 10 END) as revenue
+FROM customer_orders
+
+--- What if there was an additional $1 charge for any pizza extras?
+SELECT SUM(CASE WHEN (pizza_id=1 and extras!='None') THEN 13
+WHEN (pizza_id=1 and extras='None') THEN 12
+WHEN (pizza_id=2 and extras!='None') THEN 11
+WHEN (pizza_id=2 and extras='None') THEN 10 END) as revenue_extras
+FROM customer_orders
+
+--- The pizza runner team now wants an additional rating system that allows customers to rate their runner,
+--- how would you design an additional table for this new dataset- generate a schema for this new table and insert your own
+---data for ratings for each successful customer order between 1 to 5
+CREATE TABLE runner_ratings
+(customer_id int,
+order_id int,
+runner_id int,
+rating int)
+
+INSERT INTO runner_ratings
+SELECT DISTINCT customer_id, 
+runner_orders.order_id,
+runner_id, 
+1
+FROM runner_orders
+JOIN
+customer_orders
+on customer_orders.order_id=runner_orders.order_id
+WHERE cancellation='None'
+
+UPDATE runner_ratings
+SET rating=3
+WHERE customer_id=101 and order_id=1 and runner_id=1
+
+UPDATE runner_ratings
+SET rating=2
+WHERE customer_id=101 and order_id=2 and runner_id=1
+
+UPDATE runner_ratings
+SET rating=2
+WHERE customer_id=102 and order_id=3 and runner_id=1
+
+UPDATE runner_ratings
+SET rating=4
+WHERE customer_id=102 and order_id=8 and runner_id=2
+
+UPDATE runner_ratings
+SET rating=5
+WHERE customer_id=103 and order_id=4 and runner_id=2
+
+UPDATE runner_ratings
+SET rating=4
+WHERE customer_id=104 and order_id=5 and runner_id=3
+
+UPDATE runner_ratings
+SET rating=1
+WHERE customer_id=104 and order_id=10 and runner_id=1
+
+UPDATE runner_ratings
+SET rating=3
+WHERE customer_id=105 and order_id=7 and runner_id=2
+
+
+
+
+
+
+
+
+
+
+
 
 
 
