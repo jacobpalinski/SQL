@@ -244,7 +244,27 @@ UPDATE runner_ratings
 SET rating=3
 WHERE customer_id=105 and order_id=7 and runner_id=2
 
-
+--- Using your newly generated table can you join all of the information together to form a table that has the following information
+-- successful deliveries? customer_id, order_id,runner_id, rating,order_time, pickup_time, Time between order and pickup
+--- delivery duration, average speed, total number of pizzas.
+SELECT runner_ratings.customer_id,
+runner_ratings.order_id,
+rating,
+order_time,
+pickup_time,
+DATEDIFF(mi,order_time,pickup_time) as time_diff,
+duration,
+1.0*(distance/duration) as average_speed,
+COUNT(pizza_id) as pizzas_ordered
+FROM runner_ratings
+JOIN
+customer_orders
+on runner_ratings.customer_id=customer_orders.customer_id AND runner_ratings.order_id=customer_orders.order_id
+JOIN
+runner_orders
+on runner_orders.order_id=customer_orders.order_id
+GROUP BY runner_ratings.customer_id, runner_ratings.order_id, rating, order_time, pickup_time,DATEDIFF(mi,order_time,pickup_time),
+duration, 1.0*(distance/duration)
 
 
 
