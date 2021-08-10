@@ -266,7 +266,16 @@ on runner_orders.order_id=customer_orders.order_id
 GROUP BY runner_ratings.customer_id, runner_ratings.order_id, rating, order_time, pickup_time,DATEDIFF(mi,order_time,pickup_time),
 duration, 1.0*(distance/duration)
 
-
+--- If a Meat Lovers pizza was $12 and Vegetarian $10 fixed prices with no cost for extras and each runner is paid $0.30
+--- kilometre traveled- how much money does Pizza Runner have left over after these deliveries 
+SELECT SUM(CASE WHEN pizza_name= 'Meatlovers' THEN 12 ELSE 10 END) - 0.30*SUM(distance) as money_leftover
+FROM runner_orders
+JOIN
+customer_orders
+on runner_orders.order_id=customer_orders.order_id
+JOIN
+pizza_names
+on customer_orders.pizza_id=pizza_names.pizza_id
 
 
 
