@@ -56,6 +56,22 @@ GROUP BY TO_CHAR(txn_date, 'Month')
 HAVING (COUNT(txn_type='deposit')>1 AND COUNT(txn_type='purchase')>=1)
 OR (COUNT(txn_type='deposit')>1 AND COUNT(txn_type='withdrawal')>=1)
 
+--- What is the closing balance for each customer at the end of the month?
+;with net_transactions as (SELECT customer_id, 
+TO_CHAR(txn_date, 'Month') as month_name,
+SUM(CASE WHEN txn_type='deposit' THEN +txn_amount
+   WHEN txn_type='purchase' THEN -txn_amount
+   WHEN txn_type='withdrawal' THEN -txn_amount END) as net_transactions
+FROM data_bank.customer_transactions
+GROUP BY customer_id, TO_CHAR(txn_date, 'Month'))
+
+SELECT customer_id, 
+month_name,
+SUM(net_transactions) OVER (PARTITION BY customer_id ORDER BY month_name ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as "Closing_Balance"
+FROM net_transactions
+
+
+
 
 
 
