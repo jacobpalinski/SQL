@@ -193,7 +193,6 @@ on Orders.OrderID=OrderDetails.OrderID
 Group By Customers.CustomerID,
 Customers.CompanyName),
 
-CustGroups as (
 Select CustomerID,
 CompanyName,
 TotalOrderAmount,
@@ -202,7 +201,7 @@ When TotalOrderAmount between 0 and 7500 Then 'Low'
 When TotalOrderAmount between 7501 and 15000 Then 'Medium'
 When TotalOrderAmount>15000 Then 'High'
 End as CustomerGroup
-From CustOrderAmounts)
+From CustOrderAmounts
 
 --Percentage of Customers in Each Group
 ;with CustOrderAmounts as (
